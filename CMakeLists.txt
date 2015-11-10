@@ -12,10 +12,11 @@ file(GLOB_RECURSE CPP_FILES src/*.cpp)
 file(GLOB_RECURSE TPP_FILES src/*.tpp)
 set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES})
 
-add_executable(biscuit ${SOURCE_FILES})
+add_executable(spaghetti ${SOURCE_FILES})
 
-target_link_libraries(biscuit
-	papaye
+add_subdirectory(glk)
+
+target_link_libraries(spaghetti
 	glk
 	SDL2
 	SDL2_image

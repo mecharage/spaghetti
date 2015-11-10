@@ -1,0 +1,3 @@
+[submodule "glk"]
+	path = glk
+	url = git@gitlab.com:D-z/glk.git
