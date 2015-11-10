@@ -1,79 +1,39 @@
 #include <iostream>
 #include <array>
+#include <algorithm>
+#include <random>
 
 #include <SDL2/SDL.h>
+
+#include <GL/glew.h>
 
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 #include <glm/matrix.hpp>
 
 #include <glk/util.h>
+#include <glk/gl/util.h>
 #include <glk/gl/Program.h>
 #include <glk/gl/Texture.h>
-
 #include <glk/gl/Instancer.h>
-
-// Program for displaying sprites
-struct {
-	glk::gl::Program prog;
-	glk::gl::Uniform<glm::mat3> pvMatrix;
-	glk::gl::Uniform<glk::gl::sampler2D> spritesheet;
-} spritesProgram;
 
 namespace gl = glk::gl;
 
-// Transform matrix factory
-glm::mat3 makeMatrix(float x, float y, float rot) {
-	glm::mat3 tm;
-
-	float angle = glk::deg2rad(rot);
-	float s = std::sin(angle);
-	float c = std::cos(angle);
-
-	tm[0][0] = c;
-	tm[1][1] = c;
-	tm[0][1] = -s;
-	tm[1][0] = s;
-
-	tm[2][0] = x - (tm[0][0] * 0.5f + tm[1][0] * 0.5f);
-	tm[2][1] = y - (tm[0][1] * 0.5f + tm[1][1] * 0.5f);
-
-	return tm;
-}
-
-//fmtoff
-GLK_GL_ATTRIB_STRUCT(
-SpriteVertex,
-	(glm::vec2, pos)
-	(glm::vec4, col)
-);
-
-// Attributes for one sprite
-GLK_GL_ATTRIB_STRUCT(
-	SpriteAttribs,
-	(glm::mat3, transform)
-	(glm::vec2, tlUv)
-	(glm::vec2, brUv)
-	(glm::vec4, color)
-);
-//fmton
-
 // Billboard for one sprite
-std::array<SpriteVertex, 4> spriteVertices{{
-	                                           {{0.0f, 0.0f}, {1.0f, 0.0f, 0.0f, 1.0f}},
-	                                           {{1.0f, 0.0f}, {0.0f, 1.0f, 0.0f, 1.0f}},
-	                                           {{0.0f, 1.0f}, {0.0f, 0.0f, 1.0f, 1.0f}},
-	                                           {{1.0f, 1.0f}, {1.0f, 1.0f, 1.0f, 1.0f}}
-                                           }};
+std::array<glm::vec2, 4> const mapVerts{{
+	                                        {0.0f, 0.0f},
+	                                        {10.0f, 0.0f},
+	                                        {0.0f, 10.0f},
+	                                        {10.0f, 10.0f}
+                                        }};
 
 int main() {
 	constexpr int const WIDTH = 1024, HEIGHT = 768;
 
 	// Initialize the OpenGL context --------------------------------------
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
-	auto sdlWindow = SDL_CreateWindow(
-		"glk Window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT, SDL_WINDOW_OPENGL
-	);
+	auto sdlWindow = SDL_CreateWindow("glk Window", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WIDTH, HEIGHT,
+	                                  SDL_WINDOW_OPENGL);
 
 	auto sdlGlContext = SDL_GL_CreateContext(sdlWindow);
 	(void) sdlGlContext;
@@ -90,22 +50,53 @@ int main() {
 	TRY_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 	// ----------------------------------------------------------------
 
-	// Setup the program ----------------------------------------------
-	auto spriteVert = gl::VertexShader::fromFile("data/sprite.vert");
-	auto spriteFrag = gl::FragmentShader::fromFile("data/sprite.frag");
-	spritesProgram.prog = gl::ProgramBuilder().attach(spriteVert).attach(spriteFrag).link();
-	spritesProgram.pvMatrix = spritesProgram.prog.uniform<glm::mat3>("pvMatrix");
-	spritesProgram.spritesheet = spritesProgram.prog.uniform<gl::usampler2D>("spritesheet");
-	// ----------------------------------------------------------------
+	struct {
+		gl::Program prog;
+		gl::Uniform <glm::mat3> pvmMatrix;
+		gl::Uniform <gl::usampler2D> tilemap;
+		gl::Uniform <gl::sampler2D> tileset;
+	} tilemapProgram;
 
-	// Set up DisplayQueue --------------------------------------------
-	gl::Vbo <SpriteVertex> instancer{begin(spriteVertices), end(spriteVertices)};
-	gl::InstanceQueue <SpriteVertex, SpriteAttribs> displayQueue{instancer};
-	// ----------------------------------------------------------------140,
+	{
+		auto const &ls = glk::LogSection("Tilemap program");
 
-	gl::Texture tex{"data/tex.png"};
+		auto tilesVert = gl::VertexShader::fromFile("data/tilemap.vert");
+		auto tilesFrag = gl::FragmentShader::fromFile("data/tilemap.frag");
 
-	glm::vec2 camSize{WIDTH / 64, HEIGHT / 64};
+		tilemapProgram.prog = gl::ProgramBuilder().attach(tilesVert).attach(tilesFrag).link();
+
+		//TODO : moins verbeux
+		tilemapProgram.pvmMatrix = tilemapProgram.prog.uniform<glm::mat3>("pvmMatrix");
+		tilemapProgram.tilemap = tilemapProgram.prog.uniform<gl::usampler2D>("tilemap");
+	}
+
+	glk::gl::Texture mapTex;
+
+	constexpr int const mapWidth = 10, mapHeight = 10;
+
+	mapTex.bind();
+	TRY_GL(glTexStorage2D(GL_TEXTURE_2D, 1, GL_R32UI, mapWidth, mapHeight));
+	mapTex.unbind();
+
+	std::array<std::uint32_t, mapWidth * mapHeight> mapData;
+
+	std::mt19937 rng;
+	rng.seed(1447054199);
+
+	std::generate(begin(mapData), end(mapData), [&rng] {
+		return std::uniform_int_distribution<>{0, 1}(rng);
+	});
+
+	// Update
+	mapTex.bind();
+	TRY_GL(
+		glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, mapWidth, mapHeight, GL_RED_INTEGER, GL_UNSIGNED_INT, mapData.data()));
+	mapTex.unbind();
+
+	glk::gl::Vbo<glm::vec2> mapVbo{begin(mapVerts), end(mapVerts)};
+	glk::gl::VaoName mapVao;
+
+	glm::vec2 camSize{WIDTH / 32, HEIGHT / 32};
 
 	glm::mat3 worldToView{
 		1.0f / camSize.x, 0.0f, 0.0f,
@@ -133,23 +124,16 @@ int main() {
 
 		TRY_GL(glClear(GL_COLOR_BUFFER_BIT));
 
-		displayQueue.clear();
-		for (int i = 0; i < 8; ++i)
-			displayQueue.enqueue(SpriteAttribs{
-				makeMatrix(6 + i, 6, ticker + i * 15),
-				glm::vec2(0.0f), glm::vec2(1.0f),
-				glm::vec4(1.0f)
-			});
+		tilemapProgram.pvmMatrix = pvMat;
+		tilemapProgram.tilemap = 0u;
 
-		displayQueue.upload();
+		mapTex.bind(GL_TEXTURE0);
 
-		tex.bind(GL_TEXTURE2);
-
-		spritesProgram.prog.use();
-		spritesProgram.pvMatrix = pvMat;
-		spritesProgram.spritesheet = 2u;
-
-		displayQueue.display();
+		TRY_GL(glBindVertexArray(mapVao));
+		TRY_GL(glBindBuffer(GL_ARRAY_BUFFER, mapVbo.name()));
+		TRY_GL(glEnableVertexAttribArray(0u));
+		glk::gl::setAttribPointers<glm::vec2>(0);
+		TRY_GL(glDrawArrays(GL_TRIANGLE_STRIP, 0, mapVbo.size()));
 
 		SDL_GL_SwapWindow(sdlWindow);
 		++ticker;
