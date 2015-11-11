@@ -5,16 +5,18 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -Wall -Wextra -Wfatal-errors 
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_GLIBCXX_DEBUG -O0 -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMKE_CXX_FLAGS_RELEASE} -DNDEBUG -O3")
 
-include_directories(AFTER include)
+include_directories(AFTER include glk/include)
 
 file(GLOB_RECURSE H_FILES include/*.h)
 file(GLOB_RECURSE CPP_FILES src/*.cpp)
 file(GLOB_RECURSE TPP_FILES src/*.tpp)
-set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES})
 
-add_executable(spaghetti sample/GUI.cpp ${SOURCE_FILES} )
+set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES} include/Type_Declarator.h)
 
-#add_subdirectory(glk)
+
+add_executable(spaghetti sample/SDD.cpp ${SOURCE_FILES} )
+
+
 
 FIND_PACKAGE(OpenGL)
 IF(OPENGL_FOUND)
@@ -28,13 +30,22 @@ IF(GLEW_FOUND)
     MESSAGE(STATUS "Detected GLEW path is : ${GLEW_LIBRARIES}")
 ENDIF(GLEW_FOUND)
 
+
+if(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
+    set(ADDITIONAL_LIBS "mingw32")
+endif()
+
 target_link_libraries(spaghetti
-	SDL2
-	SDL2_image
-    GL
-    GLEW
-        GLU
+        ${OPENGL_LIBRARIES}
+        ${GLEW_LIBRARIES}
+        ${ADDITIONAL_LIBS}
+        SDL2main
+        SDL2
+        SDL2_image
+
 )
+
+
 
 set_target_properties(spaghetti PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
 

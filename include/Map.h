@@ -22,16 +22,20 @@
 #include "Type_Declarator.h"
 
 #include "Shader.h"
+#include "Object.h"
+
+#include <memory>
 
 extern glm::mat3 g_pvMat;
 
-template <typename Tiles = std::uint32_t>
-using Tiles_Type = Tiles ;
 
 class Map {
 
+    typedef std::vector<std::unique_ptr<Object>>  Objects_Type;
     unsigned int m_width, m_height;
-    std::vector<Tiles_Type<>> m_data;
+    std::vector<Tile_Type> m_data;
+
+    Objects_Type m_objects;
 
 	Shader _program;
 	GLuint _vbo, _vao;
@@ -39,6 +43,19 @@ class Map {
 
 	glk::gl::Texture _tex;
 public:
+
+    void addObject( std::unique_ptr<Object> object_ptr) {
+        m_objects.push_back(std::move(object_ptr));
+    }
+
+    template<typename ... Args>
+    void eraseObject(Args ... params) {
+        (m_objects.erase(params)...);
+    }
+
+    const Objects_Type & getObjects()const {
+        return m_objects;
+    }
 
 
     unsigned int getWidth() const {
@@ -49,7 +66,7 @@ public:
         return m_height;
     }
 
-    const std::vector<Tiles_Type<>> &getM_data() const {
+    const std::vector<Tile_Type<>> &getM_data() const {
         return m_data;
     }
 
@@ -95,7 +112,7 @@ public:
     Map(
             unsigned int width,
             unsigned int height,
-            const std::vector<Tiles_Type<>> &data) :
+            const std::vector<Tile_Type<>> &data) :
             Map(width,height)
     {
 
@@ -103,12 +120,12 @@ public:
             setData(data);
         }catch (const std::length_error & error) {
             std::cout<<"Invalid argument data"<<std::endl;
-            m_data = std::vector<Tiles_Type<> >(m_width * m_height);
+            m_data = std::vector<Tile_Type<> >(m_width * m_height);
         }
 
     }
 
-    Tiles_Type<>  &operator()(unsigned int i, unsigned int j) {
+    Tile_Type<>  &operator()(unsigned int i, unsigned int j) {
         if( i >= m_width)
             throw std::range_error("The first argument is invalid");
         if(j >= m_height)
@@ -117,11 +134,11 @@ public:
         return m_data[j * m_height + i];
     }
 
-    const Tiles_Type<> & operator()(const Coord_type & point)const {
+    const Tile_Type<> & operator()(const Coord_type & point)const {
         return (*this)(int(point.x), int(point.y));
     }
 
-    const Tiles_Type<>  &operator()(unsigned int i, unsigned int j)const {
+    const Tile_Type<>  &operator()(unsigned int i, unsigned int j)const {
         if( i >= m_width)
             throw std::range_error("The first argument is invalid");
         if(j >= m_height)
@@ -130,11 +147,11 @@ public:
         return m_data[j * m_height + i];
     }
 
-    Tiles_Type<> & operator()(const Coord_type & point) {
+    Tile_Type<> & operator()(const Coord_type & point) {
         return (*this)(point.x, point.y);
     }
 
-    void setData(const std::vector<Tiles_Type<> > &data) {
+    void setData(const std::vector<Tile_Type<> > &data) {
         if(data.size() != m_data.size() )
             throw std::length_error("Bad vector data size");
         m_data = data;

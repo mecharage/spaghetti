@@ -6,6 +6,7 @@
 #define SPAGHETTI_OBJECT_H
 
 #include <Type_Declarator.h>
+#include <Ray.h>
 
 class Object{
     Coord_type m_position;
@@ -20,7 +21,31 @@ public:
 
     virtual ~Object()=0;
 
-    virtual glm::vec2 interact(const Ray & ray, const Tiles_Types<> & oldTiles, const Tiles_Tiles<> & newTiles  )const {
+    virtual glm::vec2 interact(
+            Ray & ray,
+
+            const glm::vec2 & oldDirection,
+            const Coord_type & oldPosition,
+            const Coord_type & newPosition,
+
+            const Tile_Type & oldTile,
+            const Tile_Type & newTile,
+
+            float vlim,
+            float hlim
+    ) const {
+
+        glm::vec2 direction(oldDirection);
+        if (newTile != oldTile) {
+            (hlim < vlim ? direction.x : direction.y) *= -1;
+
+            ray.push_back(newPosition);
+
+
+        }
+
+
+        return direction;
 
     };
 

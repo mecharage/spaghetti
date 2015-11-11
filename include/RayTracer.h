@@ -19,7 +19,7 @@ public:
 		glm::vec2 direction(ray.getInitialDirection());
 		Coord_type position = ray.getInitialPosition();
 		glm::ivec2 tilePos(position);
-		Tiles_Type<> col = map(tilePos);
+		Tile_Type<> col = map(tilePos);
 
 		for (unsigned i = 0; i < 20; ++i) {
 			Coord_type localPos = position - glm::vec2(tilePos);
@@ -48,7 +48,11 @@ public:
 			if (tilePos.x < 0 || tilePos.y < 0 || tilePos.x >= map.getWidth() || tilePos.y >= map.getHeight())
 				break;
 
-			Tiles_Type<> newTile = map(tilePos);
+			Tile_Type<> newTile = map(tilePos);
+
+
+
+
 			if (newTile != col) {
 				// tile solide
 				(hlim < vlim ? direction.x : direction.y) *= -1;

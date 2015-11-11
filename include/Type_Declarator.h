@@ -10,4 +10,5 @@
 
 typedef glm::vec2 Coord_type;
 typedef std::vector<Coord_type> Ray_Type;
+typedef std::uint32_t Tile_Type;
 #endif //SPAGHETTI_TYPE_DECLARATOR_H
