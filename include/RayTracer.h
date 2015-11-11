@@ -17,16 +17,16 @@ class RayTracer {
     }
 
 public:
-    void trace( Ray & ray, const Map & map){
+    void trace( Ray & ray, const Map & map, unsigned maxIter = 5){
         //Todo: improve this step
 
         Coord_type nextPosition;
         glm::vec2 direction(ray.getInitialDirection());
-        Coord_type position = ray.getInitialPosition();
+        Coord_type position = ray.getInitialPosition()   ;
         glm::ivec2 tilePos(position);
         Tiles_Type & currentTiles = map(position);
 
-        for(unsigned i = 0; i < 5; ++i) {
+        for(unsigned i = 0; i < maxIter; ++i) {
 
             //Bounce with map limit
 //            if(nextPosition.x < 0 || nextPosition.x >= map.getWidth())
@@ -48,6 +48,7 @@ public:
                 float const &vlim = direction.y > 0.0f ? bottom : top;
 
                 auto prevTile = tilePos;
+                auto prevPosition = position;
 
                 if (hlim < vlim) {
                     // on sort du côté
@@ -64,6 +65,8 @@ public:
                 // position == nouvelle pos
                 ray.push_back(position);
 
+                //TODO: be aware of the old tile to bounce only when required
+                //Todo: Implement t
                 Tiles_Type newTile = map(tilePos);
                 if(newTile & 1) {
                     // tile solide
