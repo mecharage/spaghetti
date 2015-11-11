@@ -10,7 +10,7 @@ include_directories(AFTER include)
 file(GLOB_RECURSE H_FILES include/*.h)
 file(GLOB_RECURSE CPP_FILES src/*.cpp)
 file(GLOB_RECURSE TPP_FILES src/*.tpp)
-set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES} include/Map.h include/Ray.h)
+set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES})
 
 add_executable(spaghetti ${SOURCE_FILES} )
 
@@ -29,9 +29,11 @@ IF(GLEW_FOUND)
 ENDIF(GLEW_FOUND)
 
 target_link_libraries(spaghetti
-
 	SDL2
 	SDL2_image
+    GL
+    GLEW
+        GLU
 )
 
 set_target_properties(spaghetti PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
