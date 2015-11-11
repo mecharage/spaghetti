@@ -13,21 +13,24 @@
 
 #include <GL/glew.h>
 
-#include <glm/vec2.hpp>
+
 #include <glm/matrix.hpp>
 
 #include "glk/gl/Texture.h"
 #include "glk/gl/util.h"
+
+#include "Type_Declarator.h"
 
 #include "Shader.h"
 
 extern glm::mat3 g_pvMat;
 
 template <typename Tiles = unsigned int>
+using Tiles_Type = Tiles ;
 class Map {
 
     unsigned int m_width, m_height;
-    std::vector<Tiles> m_data;
+    std::vector<Tiles_Type > m_data;
 
 	Shader _program;
 	GLuint _vbo, _vao;
@@ -37,7 +40,15 @@ class Map {
 public:
 
 
-    const std::vector<Tiles> &getM_data() const {
+    unsigned int getWidth() const {
+        return m_width;
+    }
+
+    unsigned int getHeight() const {
+        return m_height;
+    }
+
+    const std::vector<Tiles_Type > &getM_data() const {
         return m_data;
     }
 
@@ -83,7 +94,7 @@ public:
     Map(
             unsigned int width,
             unsigned int height,
-            const std::vector<Tiles> &data) :
+            const std::vector<Tiles_Type > &data) :
             Map(width,height)
     {
 
@@ -91,12 +102,12 @@ public:
             setData(data);
         }catch (const std::length_error & error) {
             std::cout<<"Invalid argument data"<<std::endl;
-            m_data = std::vector<Tiles>(m_width * m_height);
+            m_data = std::vector<Tiles_Type >(m_width * m_height);
         }
 
     }
 
-    Tiles &operator()(unsigned int i, unsigned int j) {
+    Tiles_Type  &operator()(unsigned int i, unsigned int j) {
         if( i >= m_width)
             throw std::range_error("The first argument is invalid");
         if(j >= m_height)
@@ -105,7 +116,24 @@ public:
         return m_data[j * m_height + i];
     }
 
-    void setData(const std::vector<Tiles> &data) {
+    const Tiles_Type & operator()(const Coord_type & point)const {
+        return this->(int(point.x), int(point.y));
+    }
+
+    const Tiles_Type  &operator()(unsigned int i, unsigned int j)const {
+        if( i >= m_width)
+            throw std::range_error("The first argument is invalid");
+        if(j >= m_height)
+            throw std::range_error("The second argument is invalid");
+
+        return m_data[j * m_height + i];
+    }
+
+    Tiles_Type & operator()(const Coord_type & point) {
+        return this->(point.x, point.y);
+    }
+
+    void setData(const std::vector<Tiles_Type > &data) {
         if(data.size() != m_data.size() )
             throw std::length_error("Bad vector data size");
         m_data = data;

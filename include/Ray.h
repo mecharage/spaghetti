@@ -7,22 +7,27 @@
 
 #include <vector>
 #include <glm/vec2.hpp>
+#include "Type_Declarator.h"
 
-typedef glm::vec2 Coord_type;
-typedef std::vector<Coord_type> Ray_Type;
 
 class Ray : public Ray_Type{
 
 private:
-    glm::ivec2 m_initialDirection;
+    Coord_type m_initialPosition;
+    glm::vec2 m_initialDirection;
 public:
     template <typename ... Args>
-    Ray(glm::ivec2 initialDirection, Args && ... params):
+    Ray(const glm::vec2 & initialPosition, const glm::ivec2 & initialDirection, Args && ... params):
+            m_initialPosition(initialPosition),
             m_initialDirection(initialDirection),
             Ray_Type(std::forward<Args>(params)...){}
 
-    const glm::ivec2 &getInitialDirection() const {
+    const glm::vec2 &getInitialDirection() const {
         return m_initialDirection;
+    }
+
+    const Coord_type &getInitialPosition() const {
+        return  m_initialPosition;
     }
 
 
