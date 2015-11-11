@@ -14,7 +14,7 @@ file(GLOB_RECURSE TPP_FILES src/*.tpp)
 set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES} include/Type_Declarator.h)
 
 
-add_executable(spaghetti sample/SDD.cpp ${SOURCE_FILES} )
+add_executable(spaghetti sample/GUI.cpp ${SOURCE_FILES} )
 
 
 

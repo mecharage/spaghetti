@@ -26,7 +26,7 @@
 
 #include <memory>
 
-extern glm::mat3 g_pvMat;
+extern glm::vec2 const g_screenScale;
 
 
 class Map {
@@ -39,7 +39,7 @@ class Map {
 
 	Shader _program;
 	GLuint _vbo, _vao;
-	GLint _tilemapLoc, _pvmLoc;
+	GLint _tilemapLoc, _scaleLoc;
 
 	glk::gl::Texture _tex;
 public:
@@ -95,7 +95,7 @@ public:
 	            CHECK_GL_ERROR();
 	            TRY_GL(_program.load());
 
-	            _pvmLoc = glGetUniformLocation(_program.getProgramID(), "pvmMatrix");
+	            _scaleLoc = glGetUniformLocation(_program.getProgramID(), "screenScale");
 	            _tilemapLoc = glGetUniformLocation(_program.getProgramID(), "tilemap");
 	            CHECK_GL_ERROR();
 
@@ -165,7 +165,7 @@ public:
 		_tex.unbind();
 
 		TRY_GL(glUseProgram(_program.getProgramID()));
-		TRY_GL(glUniformMatrix3fv(_pvmLoc, 1, GL_FALSE, glm::value_ptr(g_pvMat)));
+		TRY_GL(glUniform2fv(_scaleLoc, 1, glm::value_ptr(g_screenScale)));
 		TRY_GL(glUniform1i(_tilemapLoc, 0));
 
 		_tex.bind(GL_TEXTURE0);
