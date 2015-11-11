@@ -17,6 +17,7 @@
 #include <Shader.h>
 #include <Map.h>
 #include <RayTracer.h>
+#include <Mirror.h>
 
 namespace gl = glk::gl;
 
@@ -44,7 +45,7 @@ glm::mat3 g_pvMat = g_viewToScreen * g_worldToView;
 
 glm::vec2 const g_screenScale{TILE_SZ / WIDTH, TILE_SZ / HEIGHT};
 
-int main() {
+int main(int, char**) {
 
 	// Initialize the OpenGL context --------------------------------------
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
@@ -116,8 +117,9 @@ int main() {
 		mouse /= TILE_SZ;
 		mouse -= rayOrig;
 
-		Ray ray(rayOrig, normalize(mouse));
-		RayTracer::trace(ray, map);
+
+        map.addObject(std::make_unique<Mirror>(glm::vec2(3), glm::vec2(0.0f)));
+        Ray ray = RayTracer::trace(map, rayOrig, normalize(mouse));
 
 		std::vector<glm::vec2> &rayVerts = ray;
 

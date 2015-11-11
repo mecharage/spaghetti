@@ -25,35 +25,14 @@ public:
     {
     }
 
-    virtual ~Object()=0;
+    virtual ~Object(){};
 
-    virtual glm::vec2 interact(
-            Ray & ray,
-
-            const glm::vec2 & oldDirection,
-            const Coord_type & oldPosition,
-            const Coord_type & newPosition,
-
-            const Tile_Type & oldTile,
-            const Tile_Type & newTile,
-
-            float vlim,
-            float hlim
-    ) const {
-
-        glm::vec2 direction(oldDirection);
-        if (newTile != oldTile) {
-            (hlim < vlim ? direction.x : direction.y) *= -1;
-
-            ray.push_back(newPosition);
-
-
-        }
-
-
-        return direction;
-
-    };
+    virtual bool interact(
+            const Ray & ray,
+            glm::vec2 & nextPosition,
+            glm::ivec2 & nextTilePosition,
+            glm::vec2 & nextDirection
+    ) const = 0 ;
 
     const   glm::ivec2 &getPosition()const {
         return m_position;

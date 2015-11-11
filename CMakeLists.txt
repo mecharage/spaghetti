@@ -11,10 +11,10 @@ file(GLOB_RECURSE H_FILES include/*.h)
 file(GLOB_RECURSE CPP_FILES src/*.cpp)
 file(GLOB_RECURSE TPP_FILES src/*.tpp)
 
-set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES} include/Type_Declarator.h)
+set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES})
 
 
-add_executable(spaghetti sample/SDD.cpp ${SOURCE_FILES} )
+add_executable(spaghetti sample/GUI.cpp ${SOURCE_FILES} )
 
 
 

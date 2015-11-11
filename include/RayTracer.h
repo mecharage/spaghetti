@@ -13,64 +13,78 @@
 class RayTracer {
 public:
 
-	static void trace(Ray &ray, const Map &map) {
+	static Ray trace(
+            const Map &map,
+            const glm::vec2 &startingPosition,
+            const glm::vec2 &startingDirection,
+            unsigned iterMax = 20
+    ) {
 		//Todo: improve this step
 
-		glm::vec2 direction(ray.getInitialDirection());
-		Coord_type position = ray.getInitialPosition();
-		glm::ivec2 tilePos(position);
-		Tile_Type oldTile = map(tilePos);
 
-		for (unsigned i = 0; i < 20; ++i) {
-			Coord_type localPos = position - glm::vec2(tilePos);
-            Coord_type oldPosition = position;
-            
-			float const left = -localPos.x / direction.x;
-			float const right = (1.0f - localPos.x) / direction.x;
-			float const top = -localPos.y / direction.y;
-			float const bottom = (1.0f - localPos.y) / direction.y;
-
-			float const &hlim = direction.x > 0.0f ? right : left;
-			float const &vlim = direction.y > 0.0f ? bottom : top;
+        Ray ray(
+                startingPosition,
+                startingDirection,
+                glm::ivec2(startingPosition)
+        );
 
 
-			auto prevTile = tilePos;
+		Tile_Type currentTileColor = map(ray.m_tilePosition);
+        Object * lastObject = nullptr;
 
+		for (unsigned i = 0; i < iterMax; ++i) {
+
+            glm::vec2 inTilePosition = ray.m_position - glm::vec2(ray.m_tilePosition);
+
+			float const left = -inTilePosition.x / ray.m_direction.x;
+			float const right = (1.0f - inTilePosition.x) / ray.m_direction.x;
+			float const top = -inTilePosition.y / ray.m_direction.y;
+			float const bottom = (1.0f - inTilePosition.y) / ray.m_direction.y;
+
+			float const hlim = ray.m_direction.x > 0.0f ? right : left;
+			float const vlim = ray.m_direction.y > 0.0f ? bottom : top;
+
+            glm::vec2 nextPosition(ray.m_position);
+            glm::vec2 nextDirection(ray.m_direction);
+            glm::ivec2 nextTilePosition(ray.m_tilePosition);
 			if (hlim < vlim) {
 				// on sort du côté
-				position += hlim * direction;
-				tilePos.x += direction.x > 0.0f ? 1 : -1;
+                nextPosition += hlim * ray.m_direction;
+				nextTilePosition.x += ray.m_direction.x > 0.0f ? 1 : -1;
 			} else {
 				// on sort du haut/bas
-				position += vlim * direction;
-				tilePos.y += direction.y > 0.0f ? 1 : -1;
+                nextPosition += vlim * ray.m_direction;
+				nextTilePosition.y += ray.m_direction.y > 0.0f ? 1 : -1;
 			}
-
-			// position == nouvelle pos
-
-			if (tilePos.x < 0 || tilePos.y < 0 || tilePos.x >= map.getWidth() || tilePos.y >= map.getHeight())
-				break;
-
-			Tile_Type newTile = map(tilePos);
 
 
             //Add Object Interaction
-            for(auto & object : map.getObjects()) {
-                if( object->getPosition() == tilePos ) {
-                    object->interact( ray, direction, oldPosition, position, oldTile, newTile, vlim, hlim);
-                }
+            for(const auto & object : map.getObjects()) {
+                if(object.get() != lastObject && object->interact( ray, nextPosition, nextTilePosition, nextDirection))
+                    lastObject = object.get();
             }
 
-            //Default Action
-			if (newTile != oldTile) {
-				// tile solide
-				(hlim < vlim ? direction.x : direction.y) *= -1;
-				ray.push_back(position);
-				tilePos = prevTile;
-			}
+            // position == nouvelle pos
+            //Detection du bord de la map
+            if (nextTilePosition.x < 0 || nextTilePosition.y < 0 || nextTilePosition.x >= map.getWidth() || nextTilePosition.y >= map.getHeight())
+                break;
 
+
+            Tile_Type newTile = map(nextTilePosition);
+
+
+            //Default Action
+			if (newTile != map(ray.m_tilePosition)) {
+				// tile solide
+				(hlim < vlim ? ray.m_direction.x : ray.m_direction.y) *= -1;
+				ray.push_back(nextPosition);
+			}
+            ray.m_direction = nextDirection;
+            ray.m_position = nextPosition;
+            ray.m_tilePosition = nextTilePosition;
 
 		}
+        return ray;
 	}
 
 };

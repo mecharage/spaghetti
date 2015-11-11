@@ -12,27 +12,26 @@
 
 class Ray : public Ray_Type {
 
-private:
-	Coord_type m_initialPosition;
-	glm::vec2 m_initialDirection;
 public:
+
+    glm::vec2 m_position;
+    glm::vec2 m_direction;
+    glm::ivec2 m_tilePosition;
+
 	template<typename ... Args>
-	Ray(const glm::vec2 &initialPosition, const glm::vec2 &initialDirection, Args &&... params)
+	Ray(
+            const glm::vec2& position,
+            const glm::vec2& direction,
+            const glm::ivec2& tilePosition,
+            Args &&... params)
 		:
-		Ray_Type(std::forward<Args>(params)...), m_initialPosition(initialPosition), m_initialDirection(
-		initialDirection) {
-		push_back(m_initialPosition);
+		Ray_Type(std::forward<Args>(params)...),
+        m_position(position),
+        m_direction(direction),
+        m_tilePosition(tilePosition)
+    {
+		push_back(m_position);
 	}
-
-	const glm::vec2 &getInitialDirection() const {
-		return m_initialDirection;
-	}
-
-	const Coord_type &getInitialPosition() const {
-		return m_initialPosition;
-	}
-
-
 };
 
 #endif //SPAGHETTI_RAY_H
