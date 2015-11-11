@@ -39,7 +39,7 @@ glm::mat3 g_viewToScreen{
 
 glm::mat3 g_pvMat = g_viewToScreen * g_worldToView;
 
-int main() {
+int main(int , char **) {
 
 	// Initialize the OpenGL context --------------------------------------
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
@@ -83,5 +83,6 @@ int main() {
 	} while (loop);
 
 	SDL_Quit();
+
 	return 0;
 }
