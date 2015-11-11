@@ -10,6 +10,7 @@
 #include <glm/vec2.hpp>
 #include <glm/vec4.hpp>
 #include <glm/matrix.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <glk/util.h>
 #include <glk/gl/util.h>
@@ -27,23 +28,27 @@ namespace {
 
 float const TILE_SZ = 48.0f;
 
-glm::vec2 g_camSize{WIDTH / TILE_SZ, HEIGHT / TILE_SZ};
-
-glm::mat3 g_worldToView{
-	1.0f / g_camSize.x, 0.0f, 0.0f,
-	0.0f, 1.0f / g_camSize.y, 0.0f,
-	0.0f, 0.0f, 1.0f
-};
-
-glm::mat3 g_viewToScreen{
-	2.0f, 0.0f, 0.0f,
-	0.0f, -2.0f, 0.0f,
-	-1.0f, 1.0f, 1.0f
-};
-
-glm::mat3 g_pvMat = g_viewToScreen * g_worldToView;
-
 glm::vec2 const g_screenScale{TILE_SZ / WIDTH, TILE_SZ / HEIGHT};
+
+std::array<glm::vec2, 4> const unitSquare{{{0.0f, 0.0f}, {1.0f, 0.0f}, {0.0f, 1.0f}, {1.0f, 1.0f}}};
+
+glm::mat3 makeMatrix(float x, float y, float rot) {
+	glm::mat3 tm;
+
+	float angle = glk::deg2rad(rot);
+	float s = std::sin(angle);
+	float c = std::cos(angle);
+
+	tm[0][0] = c;
+	tm[1][1] = c;
+	tm[0][1] = -s;
+	tm[1][0] = s;
+
+	tm[2][0] = x - (tm[0][0] * 0.5f + tm[1][0] * 0.5f);
+	tm[2][1] = y - (tm[0][1] * 0.5f + tm[1][1] * 0.5f);
+
+	return tm;
+}
 
 int main(int, char**) {
 
@@ -69,7 +74,7 @@ int main(int, char**) {
 
 	Shader rayProgram("data/ray.vert", "data/ray.frag");
 	rayProgram.load();
-	GLint rayPvmLoc = glGetUniformLocation(rayProgram.getProgramID(), "pvmMatrix");
+	GLint rayPvmLoc = glGetUniformLocation(rayProgram.getProgramID(), "screenScale");
 	GLint rayTilemapLoc = glGetUniformLocation(rayProgram.getProgramID(), "tilemap");
 	CHECK_GL_ERROR();
 
@@ -88,6 +93,30 @@ int main(int, char**) {
 
 	TRY_GL(glBufferData(GL_ARRAY_BUFFER, 1100 * sizeof(glm::vec2), nullptr, GL_DYNAMIC_DRAW));
 
+	GLuint spriteVao, spriteVbo;
+	TRY_GL(glGenVertexArrays(1, &spriteVao));
+	TRY_GL(glGenBuffers(1, &spriteVbo));
+
+
+	TRY_GL(glBindVertexArray(spriteVao));
+	TRY_GL(glBindBuffer(GL_ARRAY_BUFFER, spriteVbo));
+
+	TRY_GL(glEnableVertexAttribArray(0u));
+	TRY_GL(glVertexAttribPointer(0u, 2, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid *>(0)));
+
+	TRY_GL(glBufferData(GL_ARRAY_BUFFER, unitSquare.size() * sizeof(glm::vec2), unitSquare.data(), GL_STATIC_DRAW));
+
+	Shader spriteProgram("data/sprite.vert", "data/sprite.frag");
+	spriteProgram.load();
+	GLint spriteScaleLoc = glGetUniformLocation(spriteProgram.getProgramID(), "screenScale");
+	GLint spriteTilemapLoc = glGetUniformLocation(spriteProgram.getProgramID(), "tilemap");
+	GLint spriteModMatLoc = glGetUniformLocation(spriteProgram.getProgramID(), "modelMatrix");
+	GLint spriteFrameLoc = glGetUniformLocation(spriteProgram.getProgramID(), "frame");
+	GLint spriteSpriteSheetLoc = glGetUniformLocation(spriteProgram.getProgramID(), "spritesheet");
+	CHECK_GL_ERROR();
+
+	glk::gl::Texture objectSprites{"data/objects.png"};
+
 	glm::vec2 rayOrig(5.5f, 4.5f);
 
 	auto const *kbd = SDL_GetKeyboardState(nullptr);
@@ -103,19 +132,16 @@ int main(int, char**) {
 
 		float const SPD = 0.1f;
 
-		if(kbd[SDL_SCANCODE_LEFT])  rayOrig.x -= SPD;
-		if(kbd[SDL_SCANCODE_RIGHT]) rayOrig.x += SPD;
-		if(kbd[SDL_SCANCODE_UP])    rayOrig.y -= SPD;
-		if(kbd[SDL_SCANCODE_DOWN])  rayOrig.y += SPD;
+		if (kbd[SDL_SCANCODE_LEFT]) rayOrig.x -= SPD;
+		if (kbd[SDL_SCANCODE_RIGHT]) rayOrig.x += SPD;
+		if (kbd[SDL_SCANCODE_UP]) rayOrig.y -= SPD;
+		if (kbd[SDL_SCANCODE_DOWN]) rayOrig.y += SPD;
 
 		TRY_GL(glClear(GL_COLOR_BUFFER_BIT));
 
 		int mx, my;
 		SDL_GetMouseState(&mx, &my);
-		glm::vec2 mouse(mx, my);
-
-		mouse /= TILE_SZ;
-		mouse -= rayOrig;
+		glm::vec2 mouse = glm::vec2(mx, my) / TILE_SZ - rayOrig;
 
 
         map.addObject(std::make_unique<Mirror>(glm::vec2(3), glm::vec2(0.0f)));
@@ -129,7 +155,7 @@ int main(int, char**) {
 		map.display();
 
 		TRY_GL(glUseProgram(rayProgram.getProgramID()));
-		TRY_GL(glUniformMatrix3fv(rayPvmLoc, 1, GL_FALSE, glm::value_ptr(g_pvMat)));
+		TRY_GL(glUniform2fv(rayPvmLoc, 1, glm::value_ptr(g_screenScale)));
 		TRY_GL(glUniform1i(rayTilemapLoc, 0));
 
 		map.tilemap().bind(GL_TEXTURE0);
@@ -137,6 +163,21 @@ int main(int, char**) {
 		TRY_GL(glBindVertexArray(rayVao));
 		TRY_GL(glBindBuffer(GL_ARRAY_BUFFER, rayVbo));
 		TRY_GL(glDrawArrays(GL_LINE_STRIP, 0, rayVerts.size()));
+
+		glm::mat3 spritePvm = makeMatrix(10.0f, 3.5f, 60.0f);
+
+		objectSprites.bind(GL_TEXTURE1);
+
+		TRY_GL(glUseProgram(spriteProgram.getProgramID()));
+		TRY_GL(glUniform2fv(spriteScaleLoc, 1, glm::value_ptr(g_screenScale)));
+		TRY_GL(glUniformMatrix3fv(spriteModMatLoc, 1, GL_FALSE, glm::value_ptr(spritePvm)));
+		TRY_GL(glUniform1i(spriteTilemapLoc, 0));
+		TRY_GL(glUniform1i(spriteSpriteSheetLoc, 1));
+
+		TRY_GL(glBindVertexArray(spriteVao));
+		TRY_GL(glBindBuffer(GL_ARRAY_BUFFER, spriteVbo));
+
+		TRY_GL(glDrawArrays(GL_TRIANGLE_STRIP, 0, unitSquare.size()));
 
 		SDL_GL_SwapWindow(sdlWindow);
 		SDL_Delay(16u);
