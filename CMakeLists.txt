@@ -10,7 +10,7 @@ include_directories(AFTER include)
 file(GLOB_RECURSE H_FILES include/*.h)
 file(GLOB_RECURSE CPP_FILES src/*.cpp)
 file(GLOB_RECURSE TPP_FILES src/*.tpp)
-set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES} include/Map.h)
+set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES} include/Map.h include/Ray.h)
 
 add_executable(spaghetti ${SOURCE_FILES} )
 
