@@ -10,19 +10,31 @@ include_directories(AFTER include)
 file(GLOB_RECURSE H_FILES include/*.h)
 file(GLOB_RECURSE CPP_FILES src/*.cpp)
 file(GLOB_RECURSE TPP_FILES src/*.tpp)
-set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES})
+set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES} include/Map.h include/Ray.h)
 
-add_executable(spaghetti ${SOURCE_FILES})
+add_executable(spaghetti ${SOURCE_FILES} )
 
-add_subdirectory(glk)
+#add_subdirectory(glk)
+
+FIND_PACKAGE(OpenGL)
+IF(OPENGL_FOUND)
+    MESSAGE(STATUS "OpenGL render API found.")
+    MESSAGE(STATUS "Detected OpenGL path is : ${OPENGL_LIBRARIES}")
+ENDIF(OPENGL_FOUND)
+
+FIND_PACKAGE(GLEW)
+IF(GLEW_FOUND)
+    MESSAGE(STATUS "GLEW found.")
+    MESSAGE(STATUS "Detected GLEW path is : ${GLEW_LIBRARIES}")
+ENDIF(GLEW_FOUND)
 
 target_link_libraries(spaghetti
-	glk
+
 	SDL2
 	SDL2_image
-	GL
-	GLEW
-	GLU
 )
 
 set_target_properties(spaghetti PROPERTIES COTIRE_ADD_UNITY_BUILD FALSE)
+
+
+#===============================
