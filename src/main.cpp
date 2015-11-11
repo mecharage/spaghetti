@@ -13,9 +13,9 @@
 
 #include <glk/util.h>
 #include <glk/gl/util.h>
-#include <glk/gl/Program.h>
 #include <glk/gl/Texture.h>
 #include <glk/gl/Instancer.h>
+#include <Shader.h>
 
 namespace gl = glk::gl;
 
@@ -50,25 +50,13 @@ int main() {
 	TRY_GL(glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA));
 	// ----------------------------------------------------------------
 
-	struct {
-		gl::Program prog;
-		gl::Uniform <glm::mat3> pvmMatrix;
-		gl::Uniform <gl::usampler2D> tilemap;
-		gl::Uniform <gl::sampler2D> tileset;
-	} tilemapProgram;
+	Shader mapProgram("data/tilemap.vert", "data/tilemap.frag");
+	CHECK_GL_ERROR();
+	TRY_GL(mapProgram.load());
 
-	{
-		auto const &ls = glk::LogSection("Tilemap program");
-
-		auto tilesVert = gl::VertexShader::fromFile("data/tilemap.vert");
-		auto tilesFrag = gl::FragmentShader::fromFile("data/tilemap.frag");
-
-		tilemapProgram.prog = gl::ProgramBuilder().attach(tilesVert).attach(tilesFrag).link();
-
-		//TODO : moins verbeux
-		tilemapProgram.pvmMatrix = tilemapProgram.prog.uniform<glm::mat3>("pvmMatrix");
-		tilemapProgram.tilemap = tilemapProgram.prog.uniform<gl::usampler2D>("tilemap");
-	}
+	GLint pvmLoc = glGetUniformLocation(mapProgram.getProgramID(), "pvmMatrix");
+	GLint tilemapLoc = glGetUniformLocation(mapProgram.getProgramID(), "tilemap");
+	CHECK_GL_ERROR();
 
 	glk::gl::Texture mapTex;
 
@@ -124,8 +112,9 @@ int main() {
 
 		TRY_GL(glClear(GL_COLOR_BUFFER_BIT));
 
-		tilemapProgram.pvmMatrix = pvMat;
-		tilemapProgram.tilemap = 0u;
+		TRY_GL(glUseProgram(mapProgram.getProgramID()));
+		TRY_GL(glUniformMatrix3fv(pvmLoc, 1, GL_FALSE, glm::value_ptr(pvMat)));
+		TRY_GL(glUniform1i(tilemapLoc, 0));
 
 		mapTex.bind(GL_TEXTURE0);
 
