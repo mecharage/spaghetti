@@ -10,28 +10,27 @@
 #include "Type_Declarator.h"
 
 
-class Ray : public Ray_Type{
+class Ray : public Ray_Type {
 
 private:
-    Coord_type m_initialPosition;
-    glm::vec2 m_initialDirection;
+	Coord_type m_initialPosition;
+	glm::vec2 m_initialDirection;
 public:
-    template <typename ... Args>
-    Ray(const glm::vec2 & initialPosition, const glm::ivec2 & initialDirection, Args && ... params):
-            m_initialPosition(initialPosition),
-            m_initialDirection(initialDirection),
-            Ray_Type(std::forward<Args>(params)...){}
+	template<typename ... Args>
+	Ray(const glm::vec2 &initialPosition, const glm::vec2 &initialDirection, Args &&... params)
+		:
+		Ray_Type(std::forward<Args>(params)...), m_initialPosition(initialPosition), m_initialDirection(
+		initialDirection) {
+		push_back(m_initialPosition);
+	}
 
-    const glm::vec2 &getInitialDirection() const {
-        return m_initialDirection;
-    }
+	const glm::vec2 &getInitialDirection() const {
+		return m_initialDirection;
+	}
 
-    const Coord_type &getInitialPosition() const {
-        return  m_initialPosition;
-    }
-
-
-
+	const Coord_type &getInitialPosition() const {
+		return m_initialPosition;
+	}
 
 
 };
