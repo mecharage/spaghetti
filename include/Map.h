@@ -50,7 +50,8 @@ public:
 
     template<typename ... Args>
     void eraseObject(Args ... params) {
-        (m_objects.erase(params)...);
+	    using ex = int[];
+	    (void) ex {0, (void(m_objects.erase(params)), 0)...};
     }
 
     const Objects_Type & getObjects()const {
@@ -66,7 +67,7 @@ public:
         return m_height;
     }
 
-    const std::vector<Tile_Type<>> &getM_data() const {
+    const std::vector<Tile_Type> &getM_data() const {
         return m_data;
     }
 
@@ -112,7 +113,7 @@ public:
     Map(
             unsigned int width,
             unsigned int height,
-            const std::vector<Tile_Type<>> &data) :
+            const std::vector<Tile_Type> &data) :
             Map(width,height)
     {
 
@@ -120,12 +121,12 @@ public:
             setData(data);
         }catch (const std::length_error & error) {
             std::cout<<"Invalid argument data"<<std::endl;
-            m_data = std::vector<Tile_Type<> >(m_width * m_height);
+            m_data = std::vector<Tile_Type>(m_width * m_height);
         }
 
     }
 
-    Tile_Type<>  &operator()(unsigned int i, unsigned int j) {
+    Tile_Type &operator()(unsigned int i, unsigned int j) {
         if( i >= m_width)
             throw std::range_error("The first argument is invalid");
         if(j >= m_height)
@@ -134,11 +135,11 @@ public:
         return m_data[j * m_height + i];
     }
 
-    const Tile_Type<> & operator()(const Coord_type & point)const {
+    const Tile_Type & operator()(const Coord_type & point)const {
         return (*this)(int(point.x), int(point.y));
     }
 
-    const Tile_Type<>  &operator()(unsigned int i, unsigned int j)const {
+    const Tile_Type &operator()(unsigned int i, unsigned int j)const {
         if( i >= m_width)
             throw std::range_error("The first argument is invalid");
         if(j >= m_height)
@@ -147,11 +148,11 @@ public:
         return m_data[j * m_height + i];
     }
 
-    Tile_Type<> & operator()(const Coord_type & point) {
+    Tile_Type & operator()(const Coord_type & point) {
         return (*this)(point.x, point.y);
     }
 
-    void setData(const std::vector<Tile_Type<> > &data) {
+    void setData(const std::vector<Tile_Type> &data) {
         if(data.size() != m_data.size() )
             throw std::length_error("Bad vector data size");
         m_data = data;
