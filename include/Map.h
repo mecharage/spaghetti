@@ -25,12 +25,13 @@
 
 extern glm::mat3 g_pvMat;
 
-template <typename Tiles = unsigned int>
+template <typename Tiles = std::uint32_t>
 using Tiles_Type = Tiles ;
+
 class Map {
 
     unsigned int m_width, m_height;
-    std::vector<Tiles_Type > m_data;
+    std::vector<Tiles_Type<>> m_data;
 
 	Shader _program;
 	GLuint _vbo, _vao;
@@ -48,7 +49,7 @@ public:
         return m_height;
     }
 
-    const std::vector<Tiles_Type > &getM_data() const {
+    const std::vector<Tiles_Type<>> &getM_data() const {
         return m_data;
     }
 
@@ -63,15 +64,15 @@ public:
 	            std::array<glm::vec2, 4> const verts{{{0.0f, 0.0f}, {width, 0.0f},{0.0f, height},{width, height}}};
 
 	            TRY_GL(glGenVertexArrays(1, &_vao));
-	            TRY_GL(glGenBuffers(1, &_vbo));
 
 	            TRY_GL(glBindVertexArray(_vao));
-	            TRY_GL(glBindBuffer(GL_ARRAY_BUFFER, _vao));
+	            TRY_GL(glGenBuffers(1, &_vbo));
+	            TRY_GL(glBindBuffer(GL_ARRAY_BUFFER, _vbo));
 
 	            TRY_GL(glEnableVertexAttribArray(0u));
 	            TRY_GL(glVertexAttribPointer(0u, 2, GL_FLOAT, GL_FALSE, 0, reinterpret_cast<GLvoid *>(0)));
 
-	            TRY_GL(glBufferData(GL_ARRAY_BUFFER, 4 * sizeof(glm::vec2), verts.data(), GL_STATIC_DRAW));
+	            TRY_GL(glBufferData(GL_ARRAY_BUFFER, verts.size() * sizeof(glm::vec2), verts.data(), GL_STATIC_DRAW));
 
 	            CHECK_GL_ERROR();
 	            TRY_GL(_program.load());
@@ -87,14 +88,14 @@ public:
 	            std::mt19937 rng;
 	            rng.seed(1447054199);
 	            std::generate(begin(m_data), end(m_data), [&rng] {
-		            return std::uniform_int_distribution<>{0, 1}(rng);
+		            return !std::uniform_int_distribution<>{0, 1}(rng);
 	            });
             }
 
     Map(
             unsigned int width,
             unsigned int height,
-            const std::vector<Tiles_Type > &data) :
+            const std::vector<Tiles_Type<>> &data) :
             Map(width,height)
     {
 
@@ -102,12 +103,12 @@ public:
             setData(data);
         }catch (const std::length_error & error) {
             std::cout<<"Invalid argument data"<<std::endl;
-            m_data = std::vector<Tiles_Type >(m_width * m_height);
+            m_data = std::vector<Tiles_Type<> >(m_width * m_height);
         }
 
     }
 
-    Tiles_Type  &operator()(unsigned int i, unsigned int j) {
+    Tiles_Type<>  &operator()(unsigned int i, unsigned int j) {
         if( i >= m_width)
             throw std::range_error("The first argument is invalid");
         if(j >= m_height)
@@ -116,11 +117,11 @@ public:
         return m_data[j * m_height + i];
     }
 
-    const Tiles_Type & operator()(const Coord_type & point)const {
-        return this->(int(point.x), int(point.y));
+    const Tiles_Type<> & operator()(const Coord_type & point)const {
+        return (*this)(int(point.x), int(point.y));
     }
 
-    const Tiles_Type  &operator()(unsigned int i, unsigned int j)const {
+    const Tiles_Type<>  &operator()(unsigned int i, unsigned int j)const {
         if( i >= m_width)
             throw std::range_error("The first argument is invalid");
         if(j >= m_height)
@@ -129,11 +130,11 @@ public:
         return m_data[j * m_height + i];
     }
 
-    Tiles_Type & operator()(const Coord_type & point) {
-        return this->(point.x, point.y);
+    Tiles_Type<> & operator()(const Coord_type & point) {
+        return (*this)(point.x, point.y);
     }
 
-    void setData(const std::vector<Tiles_Type > &data) {
+    void setData(const std::vector<Tiles_Type<> > &data) {
         if(data.size() != m_data.size() )
             throw std::length_error("Bad vector data size");
         m_data = data;
@@ -152,9 +153,11 @@ public:
 		_tex.bind(GL_TEXTURE0);
 
 		TRY_GL(glBindVertexArray(_vao));
-		TRY_GL(glBindBuffer(GL_ARRAY_BUFFER, _vao));
+		TRY_GL(glBindBuffer(GL_ARRAY_BUFFER, _vbo));
 		TRY_GL(glDrawArrays(GL_TRIANGLE_STRIP, 0, 4));
 	}
+
+	glk::gl::Texture const &tilemap() const { return _tex; }
 };
 
 

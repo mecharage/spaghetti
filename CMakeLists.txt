@@ -12,7 +12,7 @@ file(GLOB_RECURSE CPP_FILES src/*.cpp)
 file(GLOB_RECURSE TPP_FILES src/*.tpp)
 set(SOURCE_FILES ${H_FILES} ${CPP_FILES} ${TPP_FILES})
 
-add_executable(spaghetti ${SOURCE_FILES} )
+add_executable(spaghetti sample/GUI.cpp ${SOURCE_FILES} )
 
 #add_subdirectory(glk)
 
