@@ -9,11 +9,17 @@
 #include <Ray.h>
 
 class Object{
-    Coord_type m_position;
+    glm::ivec2 m_position;
     glm::vec2 m_direction;
 
 public:
-    Object(const Coord_type & position, const glm::vec2 & direction) :
+
+
+    bool operator==(const glm::vec2 & position) {
+        return glm::ivec2(position) == m_position;
+    }
+
+    Object(const  glm::ivec2 & position, const glm::vec2 & direction) :
             m_position(position),
             m_direction(direction)
     {
@@ -49,7 +55,7 @@ public:
 
     };
 
-    const  Coord_type &getPosition()const {
+    const   glm::ivec2 &getPosition()const {
         return m_position;
     }
 
@@ -61,7 +67,7 @@ public:
         m_position = position;
     }
 
-    void setDirection(const glm::vec2 & direction) {
+    void setDirection(const glm::ivec2 & direction) {
         m_direction = direction;
     }
 

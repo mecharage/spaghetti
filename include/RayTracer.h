@@ -19,10 +19,12 @@ public:
 		glm::vec2 direction(ray.getInitialDirection());
 		Coord_type position = ray.getInitialPosition();
 		glm::ivec2 tilePos(position);
-		Tile_Type<> col = map(tilePos);
+		Tile_Type<> oldTile = map(tilePos);
 
 		for (unsigned i = 0; i < 20; ++i) {
 			Coord_type localPos = position - glm::vec2(tilePos);
+            Coord_type oldPosition = position;
+            
 			float const left = -localPos.x / direction.x;
 			float const right = (1.0f - localPos.x) / direction.x;
 			float const top = -localPos.y / direction.y;
@@ -30,6 +32,7 @@ public:
 
 			float const &hlim = direction.x > 0.0f ? right : left;
 			float const &vlim = direction.y > 0.0f ? bottom : top;
+
 
 			auto prevTile = tilePos;
 
@@ -51,14 +54,22 @@ public:
 			Tile_Type<> newTile = map(tilePos);
 
 
+            //Add Object Interaction
+            for(auto & object : map.getObjects()) {
+                if( object->getPosition() == tilePos ) {
+                    object->interact( ray, direction, oldPosition, position, oldTile, newTile, vlim, hlim);
+                }
+            }
 
-
-			if (newTile != col) {
+            //Default Action
+			if (newTile != oldTile) {
 				// tile solide
 				(hlim < vlim ? direction.x : direction.y) *= -1;
 				ray.push_back(position);
 				tilePos = prevTile;
 			}
+
+
 		}
 	}
 
